@@ -51,9 +51,10 @@ void hwif_dsleep_timer() {
 }
 
 void hwif_press(int pin) {
-  digitalWrite(pin, HIGH);
   Serial.print("DEBUG: press pin ");
   Serial.println(pin);
+
+  digitalWrite(pin, HIGH);
   delay(100);
   digitalWrite(pin, LOW);
 }
@@ -144,7 +145,7 @@ bool wifi_sta_connect(void) {
     Serial.println(" failed (timeout).");
     Serial.print("Try and reconfigure in AP mode. Set gpio ");
     Serial.print(GPIO_IN);
-    Serial.println(" to HIGH.");
+    Serial.println(" to LOW.");
   }
 
   return (count < timeout);
