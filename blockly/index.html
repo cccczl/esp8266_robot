@@ -15,6 +15,7 @@
 <body>
 <a href="setup.html"><h1>My Robot</h1></a>
 Robot: <input type="text" id="robot" value=""/>
+<button onClick="sleep_toggle()">disable sleep</button><br/>
 <button onClick="program()">program</button>
 <button onClick="again()">again</button>
 
@@ -54,6 +55,7 @@ Robot: <input type="text" id="robot" value=""/>
   </xml>
   
   <script>
+    var sleep = true;
     var blocklyArea = document.getElementById('blocklyArea');
     var blocklyDiv = document.getElementById('blocklyDiv');
     var workspace = Blockly.inject(blocklyDiv,
@@ -96,6 +98,24 @@ Robot: <input type="text" id="robot" value=""/>
 	  var url = document.getElementById("robot").value;
 	  robot_url(url);
 	  robot_command(START);
+	}
+	
+	function sleep_toggle() {
+	  var sleepElem = document.getElementById("sleep");
+	  var url = document.getElementById("robot").value;
+	  var request = "/sleep";
+
+	  if (sleep == true) {
+	    sleepElem.text = "sleep enable";
+	    sleep = false;
+	  } else {
+	    sleepElem.text = "sleep disable";
+		request = request + "?time=60";
+		sleep = true;
+	  }
+	  
+	  robot_url(url);
+	  robot_send(request, console.log);
 	}
   </script>
 </body>
