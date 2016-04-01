@@ -287,6 +287,9 @@ bool handleFileRead(String path){
     return true;
   }
 
+  Serial.print("Info: file ");
+  Serial.print(path);
+  Serial.println(" does not exist");
   return false;
 }
 
