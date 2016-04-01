@@ -10,32 +10,12 @@
   <script src="robot.js"></script>
   <script src="robot_blocks.js"></script>
   <script src="robot_javascript.js"></script>
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
-    body {
-      background-color: #fff;
-      font-family: sans-serif;
-      overflow: hidden;
-    }
-    h1 {
-      font-weight: normal;
-      font-size: 140%;
-    }
-    table {
-      height: 100%;
-      width: 100%;
-    }
-    #blocklyArea {
-      height: 99%;
-    }
-  </style>
+  <link rel="stylesheet" href="robot.css">
 </head>
 <body>
-<h1>My Robot</h1>
-<button onClick="execute()">execute</button>
+<a href="robot.html"><h1>My Robot</h1></a>
+Robot: <input type="text" id="robot" value="192.168.120.101"/>
+<button id="execute" onClick="execute()">execute</button>
 
   <table>
 	<tr>
@@ -77,6 +57,7 @@
     var blocklyDiv = document.getElementById('blocklyDiv');
     var workspace = Blockly.inject(blocklyDiv,
         {toolbox: document.getElementById('toolbox')});
+
 	Blockly.Xml.domToWorkspace(workspace,
       document.getElementById('startBlocks'));
 
@@ -102,9 +83,11 @@
     function execute() {
       // Generate JavaScript code and display it.
       Blockly.JavaScript.INFINITE_LOOP_TRAP = null;
+	  var url = document.getElementById("robot").value;
 
       var code = Blockly.JavaScript.workspaceToCode(workspace);
-	  code = code + "robot_end();\n";
+	  code = "robot_url('" + url + "');\n" + code + "robot_end();\n";
+	  
       eval(code);
     }
   </script>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>My Robot</title>
+  <script src="robot.js"></script>
+  <link rel="stylesheet" href="robot.css">
+</head>
+<body>
+  <a href="index.html"><h1>My Robot</h1></a>
+  <table style="width:0;height:0">
+	<tr>
+		<td>Robot:</td>
+		<td><input type="text" id="robot" value="192.168.4.1"/></td>
+	</tr>
+	<tr>
+		<td>SSID:</td>
+		<td><input type="text" id="ssid" value=""/></td>
+	</tr>
+	<tr>
+		<td>Passphrase</td>
+		<td><input type="text" id="passphrase" value=""/></td>
+	</tr>
+	<tr>
+		<td></td>
+		<td><button id="execute" onClick="execute()">set AP</button></td>
+	</tr>
+  </table>
+  <div id="error"></div>
+
+  <script>
+    function set_error(msg) {
+	  document.getElementById("error").innerHTML = msg;
+	}
+	
+    function execute() {
+	  var url = document.getElementById("robot").value;
+	  var ssid = document.getElementById("ssid").value;
+	  var passphrase = document.getElementById("passphrase").value;
+	  var uri = url + "?ssid=" + ssid + "&" + "passphrase=" + passphrase;
+	  
+	  if (!ssid) {
+		set_error("Please enter an ssid");
+	  } else {
+		set_error("");
+		robot_send(uri, console.log);
+	  }
+    }
+  </script>
+</body>
+</html>

@@ -8,6 +8,11 @@ var RIGHT = "4";
 var START = "5";
 
 var cmds;
+var url;
+
+function robot_url(robot) {
+	url = robot;
+}
 
 function robot_start() {
 	cmds = "";
@@ -41,6 +46,21 @@ function robot_end() {
   }
 }
 
+function robot_send(request, callback)
+{
+    var xmlHttp = new XMLHttpRequest();
+	console.log("Request: " + request);
+
+    xmlHttp.onreadystatechange = function() { 
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+            callback(xmlHttp.responseText);
+    }
+
+    xmlHttp.open("GET", request, true);
+    xmlHttp.send(null);
+}
+
 function send_commands(cmds) {
-	console.log("Send commands: " + cmds);
+	uri = url + "?robot=" + cmds;
+	robot_send(uri, console.log);
 }
