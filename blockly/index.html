@@ -15,7 +15,8 @@
 <body>
 <a href="setup.html"><h1>My Robot</h1></a>
 Robot: <input type="text" id="robot" value=""/>
-<button id="execute" onClick="execute()">execute</button>
+<button onClick="program()">program</button>
+<button onClick="again()">again</button>
 
   <table>
 	<tr>
@@ -80,7 +81,7 @@ Robot: <input type="text" id="robot" value=""/>
     window.addEventListener('resize', onresize, false);
     onresize();
 	
-    function execute() {
+    function program() {
       // Generate JavaScript code and display it.
       Blockly.JavaScript.INFINITE_LOOP_TRAP = null;
 	  var url = document.getElementById("robot").value;
@@ -90,6 +91,12 @@ Robot: <input type="text" id="robot" value=""/>
 	  
       eval(code);
     }
+	
+	function again() {
+	  var url = document.getElementById("robot").value;
+	  robot_url(url);
+	  robot_command(START);
+	}
   </script>
 </body>
 </html>
