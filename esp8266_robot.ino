@@ -19,7 +19,7 @@
   or you can upload the contents of a folder if you CD in that folder and run the following command:
   for file in $(ls -A1); do curl -F "file=@$PWD/$file" esp8266fs.local/add; done
 
-  to remove files use curl -X DELETE esp8266.local/delete?path=file
+  to remove files use curl -X DELETE esp8266.local/remove?path=file
 */
 
 #include <ESP8266WiFi.h>
@@ -130,13 +130,13 @@ bool robot_prg(String cmds) {
 
   for (int i=0; i<MAX_COMMANDS && commands[i] != 0; i++) {
     cmd = commands[i] - '0';
-    if (cmd <=PRG || cmd >= START || hwif_cmd(cmd) == false) {
+    if (cmd < PRG || cmd > START || hwif_cmd(cmd) == false) {
+      Serial.print("Warning: unknown command");
+      Serial.println(cmd);
       return false;
     }
   }
 
-  hwif_cmd(PRG);
-  hwif_cmd(START);
   return true;
 }
 
