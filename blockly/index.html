@@ -14,8 +14,8 @@
 </head>
 <body>
 <a href="setup.html"><h1>My Robot</h1></a>
-Robot: <input type="text" id="robot" value=""/>
-<button onClick="sleep_toggle()">disable sleep</button><br/>
+  Robot: <input type="text" id="robot" value=""/>
+  <button id="sleep" onClick="sleep_toggle()">sleep disable</button>
 <button onClick="program()">program</button>
 <button onClick="again()">again</button>
 
@@ -25,6 +25,7 @@ Robot: <input type="text" id="robot" value=""/>
       </td>
     </tr>
   </table>
+
   <div id="blocklyDiv" style="position: absolute"></div>
   
   <xml id="toolbox" style="display: none">
@@ -106,10 +107,10 @@ Robot: <input type="text" id="robot" value=""/>
 	  var request = "/sleep";
 
 	  if (sleep == true) {
-	    sleepElem.text = "sleep enable";
+	    sleepElem.innerHTML = "sleep enable";
 	    sleep = false;
 	  } else {
-	    sleepElem.text = "sleep disable";
+	    sleepElem.innerHTML = "sleep disable";
 		request = request + "?time=60";
 		sleep = true;
 	  }
