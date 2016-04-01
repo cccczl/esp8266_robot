@@ -37,13 +37,12 @@
 	  var url = document.getElementById("robot").value;
 	  var ssid = document.getElementById("ssid").value;
 	  var passphrase = document.getElementById("passphrase").value;
-	  var uri = url + "?ssid=" + ssid + "&" + "passphrase=" + passphrase;
 	  
 	  if (!ssid) {
 		set_error("Please enter an ssid");
 	  } else {
 		set_error("");
-		robot_send(uri, console.log);
+		robot_AP(url, ssid, passphrase);
 	  }
     }
   </script>

@@ -7,7 +7,7 @@ var LEFT = "3";
 var RIGHT = "4";
 var START = "5";
 
-var cmds;
+var cmd;
 var url;
 
 function robot_url(robot) {
@@ -15,52 +15,55 @@ function robot_url(robot) {
 }
 
 function robot_start() {
-	cmds = "";
+	cmd = "";
 }
 
 function robot_forward() {
-	cmds = cmds + FORWARD;
+	cmd = cmd + FORWARD;
 }
 
 function robot_backward() {
-	cmds = cmds + BACKWARD;
+	cmd = cmd + BACKWARD;
 }
 
 function robot_left() {
-	cmds = cmds + LEFT;
+	cmd = cmd + LEFT;
 }
 
 function robot_right() {
-	cmds = cmds + RIGHT;
+	cmd = cmd + RIGHT;
 }
 
 function robot_end() {
-  if (cmds.length >= MAX_COMMANDS) {
+  if (cmd.length >= MAX_COMMANDS) {
 	  console.log("Error: cmd limit exceeded (max: " + MAX_COMMANDS + ")");
-	  send_commands(PROGRAM);
-  } else if (cmds.length <= 0) {
-	  send_commands(PROGRAM);
+	  robot_command(PROGRAM);
+  } else if (cmd.length <= 0) {
+	  robot_command(PROGRAM);
   } else {
-   	  cmds = cmds + PROGRAM + START;
-	  send_commands(cmds);
+   	  cmd = cmd + PROGRAM + START;
+	  robot_command(cmd);
   }
 }
 
 function robot_send(request, callback)
 {
-    var xmlHttp = new XMLHttpRequest();
+	var xmlHttp = new XMLHttpRequest();
 	console.log("Request: " + request);
 
-    xmlHttp.onreadystatechange = function() { 
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-            callback(xmlHttp.responseText);
-    }
-
-    xmlHttp.open("GET", request, true);
-    xmlHttp.send(null);
+    xmlHttp.open( "GET", request, false );
+    xmlHttp.send( null );
+    return xmlHttp.responseText;
 }
 
-function send_commands(cmds) {
-	uri = url + "?robot=" + cmds;
+function robot_AP(url, ssid, passphrase) {
+  var uri = "http://" + url + "/?ssid=" + ssid + "&" + "passphrase=" + passphrase;
+  
+  robot_url(url);
+  robot_send(uri, console.log);
+}
+
+function robot_command(cmd) {
+	uri = "http://" + url + "/?robot=" + cmd;
 	robot_send(uri, console.log);
 }
