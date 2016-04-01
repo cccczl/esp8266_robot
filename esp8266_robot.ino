@@ -1,8 +1,33 @@
+/* 
+  Copyright (c) 2016 Thomas Graziadei. All rights reserved.
+  
+  Thanks to Hristo Gochkov for the ESP8266WebServer library 
+  
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  
+  upload the contents of the data folder with MkSPIFFS Tool ("ESP8266 Sketch Data Upload" in Tools menu in Arduino IDE)
+  or you can upload the contents of a folder if you CD in that folder and run the following command:
+  for file in $(ls -A1); do curl -F "file=@$PWD/$file" esp8266fs.local/add; done
+
+  to remove files use curl -X DELETE esp8266.local/delete?path=file
+*/
+
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiType.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <Ticker.h>
+#include <FS.h>
 
 extern "C" {
 #include "user_interface.h"
@@ -34,12 +59,17 @@ const char* MY_KEY = "robot";
 Ticker timer;
 int op_mode = STA;
 bool msg_received = false;
+bool sleeping_enabled = true;
 ESP8266WebServer server(HTTP_PORT);
+File fsUploadFile;
 
 void hwif_dsleep() {
   timer.detach();
-  Serial.println("INFO: deep sleep, zzzz ... ");
-  system_deep_sleep(0);
+
+  if (sleeping_enabled) {
+    Serial.println("INFO: deep sleep, zzzz ... ");
+    system_deep_sleep(0);
+  }
 }
 
 void hwif_dsleep_timer() {
@@ -178,13 +208,13 @@ void wifi_setup(void) {
   }
 }
 
-void http_handle_root() {
+void http_handle_robot() {
   msg_received = true;
   
-  if (server.hasArg("robot")) {
-    String cmds = server.arg("robot");
+  if (server.hasArg("cmd")) {
+    String cmd = server.arg("cmd");
 
-    if (robot_prg(cmds)) {
+    if (robot_prg(cmd)) {
       server.send(200, "text/plain", "Success");
     } else {
       server.send(200, "text/plain", "Warning: robot commands not valid");
@@ -205,7 +235,149 @@ void http_handle_root() {
   hwif_dsleep();
 }
 
+void http_handle_sleep() {
+  timer.detach();
+  
+  if (server.hasArg("time")) {
+    String time = server.arg("time");
+    Serial.print("Sleeping in ");
+    Serial.print(time.toInt());
+    Serial.println("s");
+
+    sleeping_enabled = true;
+    timer.attach(time.toInt(), hwif_dsleep_timer);
+    server.send(200, "text/plain", "Sleeping enabled");
+  } else {
+    sleeping_enabled = false;
+    Serial.println("Sleeping disabled");
+    server.send(200, "text/plain", "Sleeping disabled");
+  }
+}
+
+String getContentType(String filename){
+  if(server.hasArg("download")) return "application/octet-stream";
+  else if(filename.endsWith(".htm")) return "text/html";
+  else if(filename.endsWith(".html")) return "text/html";
+  else if(filename.endsWith(".css")) return "text/css";
+  else if(filename.endsWith(".js")) return "application/javascript";
+  else if(filename.endsWith(".png")) return "image/png";
+  else if(filename.endsWith(".gif")) return "image/gif";
+  else if(filename.endsWith(".jpg")) return "image/jpeg";
+  else if(filename.endsWith(".ico")) return "image/x-icon";
+  else if(filename.endsWith(".xml")) return "text/xml";
+  return "text/plain";
+}
+
+bool handleFileRead(String path){
+  msg_received = true;
+  path.trim();
+  
+  Serial.println("Read file: " + path);
+  if(path.endsWith("/")) {
+    path += "index.htm";
+  }
+  
+  String contentType = getContentType(path);
+
+  if(SPIFFS.exists(path)) {
+    File file = SPIFFS.open(path, "r");
+    size_t sent = server.streamFile(file, contentType);
+    file.close();
+    timer_reset();
+    return true;
+  }
+
+  return false;
+}
+
+void handleFileUpload(){
+  msg_received = true;
+  HTTPUpload& upload = server.upload();
+
+  if(upload.status == UPLOAD_FILE_START) {
+    String filename = upload.filename;
+    
+    if(!filename.startsWith("/")) {
+      filename = "/" + filename;
+    }
+    
+    Serial.print("Upload file: "); 
+    Serial.println(filename);
+    
+    fsUploadFile = SPIFFS.open(filename, "w");
+  } else if(upload.status == UPLOAD_FILE_WRITE){
+
+    if(fsUploadFile) {
+      fsUploadFile.write(upload.buf, upload.currentSize);
+    }
+  } else if(upload.status == UPLOAD_FILE_END){
+    if(fsUploadFile) {
+      fsUploadFile.close();
+    }
+    
+    Serial.print("Upload size: "); 
+    Serial.println(upload.totalSize);
+  }
+
+  timer_reset();
+}
+
+void handleFileDelete(){
+  msg_received = true;
+  if(server.args() == 0) {
+    return server.send(500, "text/plain", "BAD ARGS");
+  }
+  
+  String path = server.arg(0);
+  if(!path.startsWith("/")) {
+    path = "/" + path;
+  }
+
+  Serial.println("Delete file: " + path);
+  
+  if(!SPIFFS.exists(path)) {
+    return server.send(404, "text/plain", "FileNotFound");
+  }
+  
+  SPIFFS.remove(path);
+  server.send(200, "text/plain", "");
+  timer_reset();
+}
+
+void handleFileList() {
+  msg_received = true;
+  String path = "/";
+  if(server.hasArg("dir")) {  
+    path = server.arg("dir");
+  }
+  
+  Serial.println("Show directory: " + path);
+  Dir dir = SPIFFS.openDir(path);
+
+  String output = "[";
+  while(dir.next()){
+    File entry = dir.openFile("r");
+
+    if (output != "[") {
+      output += ',';
+    }
+    
+    bool isDir = false;
+    output += "{\"type\":\"";
+    output += (isDir)?"dir":"file";
+    output += "\",\"name\":\"";
+    output += String(entry.name()).substring(1);
+    output += "\"}";
+    entry.close();
+  }
+  
+  output += "]";
+  server.send(200, "text/json", output);
+  timer_reset();
+}
+
 void http_handle_not_found(){
+  msg_received = true;
   String message = "File Not Found\n\n";
   message += "URI: ";
   message += server.uri();
@@ -218,15 +390,31 @@ void http_handle_not_found(){
     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
   server.send(404, "text/plain", message);
+  timer_reset();
 }
 
 void http_setup() {
   Serial.print("starting HTTP server (port:");
   Serial.print(HTTP_PORT);
   Serial.print(") ... ");
-  
-  server.on("/", HTTP_GET, http_handle_root);
-  server.onNotFound(http_handle_not_found);
+
+  server.on("/robot", HTTP_GET, http_handle_robot);
+  server.on("/sleep", HTTP_GET, http_handle_sleep);
+  server.on("/list", HTTP_GET, handleFileList);
+  server.on("/remove", HTTP_DELETE, handleFileDelete);
+
+  //first callback is called after the request has ended with all parsed arguments
+  //second callback handles file uploads at that location
+  server.on("/add", HTTP_POST, [](){ server.send(200, "text/plain", ""); }, handleFileUpload);
+
+  //called when the url is not defined here
+  //use it to load content from SPIFFS
+  server.onNotFound([]() {
+    if(!handleFileRead(server.uri())) {
+      http_handle_not_found();
+    }
+  });
+
   server.begin();
   
   Serial.println("done.");
@@ -237,8 +425,13 @@ void timer_reset() {
   timer.attach(60, hwif_dsleep_timer);
 }
 
+void spiffs_setup() {
+  SPIFFS.begin();
+}
+
 void setup(void) {
   hwif_setup();
+  spiffs_setup();
   wifi_setup();
   http_setup();
 

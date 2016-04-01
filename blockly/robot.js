@@ -57,13 +57,22 @@ function robot_send(request, callback)
 }
 
 function robot_AP(url, ssid, passphrase) {
-  var uri = "http://" + url + "/?ssid=" + ssid + "&" + "passphrase=" + passphrase;
-  
+  var uri = "/robot?ssid=" + ssid + "&" + "passphrase=" + passphrase;
+	
+  if (url) {
+	uri = "http://" + url + uri;
+  }
+
   robot_url(url);
   robot_send(uri, console.log);
 }
 
 function robot_command(cmd) {
-	uri = "http://" + url + "/?robot=" + cmd;
+	var uri = "/robot?cmd=" + cmd;
+	
+	if (url) {
+		uri = "http://" + url + uri;
+	}
+	
 	robot_send(uri, console.log);
 }
