@@ -274,7 +274,7 @@ bool handleFileRead(String path){
   
   Serial.println("Read file: " + path);
   if(path.endsWith("/")) {
-    path += "index.htm";
+    path += "index.html";
   }
   
   String contentType = getContentType(path);
