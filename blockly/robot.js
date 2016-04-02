@@ -66,10 +66,12 @@ function robot_AP(url, ssid, passphrase) {
   
   var response = robot_send(uri);
   console.log(response);
+  return response;
 }
 
 function robot_command(cmd) {
 	var uri = "/robot?cmd=" + cmd;
 	var response = robot_send(uri);
 	console.log(response);
+	return response;
 }
