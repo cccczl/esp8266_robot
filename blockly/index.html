@@ -19,10 +19,10 @@
 <button onClick="program()">program</button>
 <button onClick="again()">again</button>
 
-  <table>
+  <table style="height:80%;">
 	<tr>
-      <td id="blocklyArea">
-      </td>
+      <td style="width:70%" id="blocklyArea"></td>
+	  <td><textarea id="console" style="overflow-y:scroll;width:100%;height:100%;"></textarea></td>
     </tr>
   </table>
 
@@ -92,11 +92,7 @@
       var code = Blockly.JavaScript.workspaceToCode(workspace);
 	  code = "robot_url('" + url + "');\n" + code + "robot_end();\n";
 	  
-      var result = eval(code);
-	  
-	  if (result.lastIndexOf("Error:", 0) == 0) {
-		alert(result);
-	  }
+      eval(code);
     }
 	
 	function again() {
@@ -122,6 +118,16 @@
 	  robot_url(url);
 	  robot_send(request);
 	}
+	
+	console.log = (function (old_function, log) { 
+	  return function (text) {
+        old_function(text);
+        log.value += text + "\n";
+		log.scrollTop = log.scrollHeight
+      };
+	} (console.log.bind(console), document.getElementById("console")));
+	console.error = console.debug = console.info = console.log;
+	
   </script>
 </body>
 </html>
