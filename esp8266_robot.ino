@@ -244,7 +244,7 @@ void http_handle_robot() {
     
     if (wifi_credentials(server.arg("ssid"), server.arg("passphrase"))) {
       String json = "{\"ip\":\"";
-      json += WiFi.localIP();
+      json += String(WiFi.localIP());
       json += "\"}";
       http_response_json(HTTP_OK, false, json);
     } else {
@@ -390,8 +390,6 @@ void http_handle_filelist() {
 
   String output = "[";
   while(dir.next()){
-    File entry = dir.openFile("r");
-
     if (output != "[") {
       output += ',';
     }
@@ -400,9 +398,10 @@ void http_handle_filelist() {
     output += "{\"type\":\"";
     output += (isDir)?"dir":"file";
     output += "\",\"name\":\"";
-    output += String(entry.name()).substring(1);
-    output += "\"}";
-    entry.close();
+    output += dir.fileName();
+    output += "\",\"size\":";
+    output += dir.fileSize();
+    output += "}";
   }
   
   output += "]";
