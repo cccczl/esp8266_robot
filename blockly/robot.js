@@ -46,7 +46,7 @@ function robot_end() {
   }
 }
 
-function robot_send(request, callback)
+function robot_send(request)
 {
     if (url) {
 	  request = "http://" + url + request;
@@ -62,13 +62,14 @@ function robot_send(request, callback)
 
 function robot_AP(url, ssid, passphrase) {
   var uri = "/robot?ssid=" + ssid + "&" + "passphrase=" + passphrase;
-
   robot_url(url);
-  robot_send(uri, console.log);
+  
+  var response = robot_send(uri);
+  console.log(response);
 }
 
 function robot_command(cmd) {
 	var uri = "/robot?cmd=" + cmd;
-		
-	robot_send(uri, console.log);
+	var response = robot_send(uri);
+	console.log(response);
 }
