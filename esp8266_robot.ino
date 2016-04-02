@@ -213,7 +213,7 @@ void wifi_setup(void) {
 }
 
 void http_cache(bool cache) {
-  if (cache) {
+  if (cache == false) {
     server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   }  
 }
@@ -421,7 +421,7 @@ void http_handle_not_found(){
   for (uint8_t i=0; i<server.args(); i++){
     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
-  http_response_plain(HTTP_NOT_FOUND, false, message);
+  http_response_plain(HTTP_NOT_FOUND, true, message);
   timer_reset();
 }
 
@@ -437,7 +437,6 @@ void http_setup() {
 
   //first callback is called after the request has ended with all parsed arguments
   //second callback handles file uploads at that location
-  //do not send cache headers (do not use http_response)
   server.on("/add", HTTP_POST, [](){ http_response_plain(HTTP_OK, true, ""); }, http_handle_fileupload);
 
   //called when the url is not defined here
