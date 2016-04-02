@@ -208,6 +208,11 @@ void wifi_setup(void) {
   }
 }
 
+void http_response(int code, const char *type, const char *msg) {
+  server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  server.send(code, type, msg);
+}
+
 void http_handle_robot() {
   msg_received = true;
   
@@ -215,21 +220,21 @@ void http_handle_robot() {
     String cmd = server.arg("cmd");
 
     if (robot_prg(cmd)) {
-      server.send(200, "text/plain", "Success");
+      http_response(200, "text/plain", "Success");
     } else {
-      server.send(200, "text/plain", "Warning: robot commands not valid");
+      http_response(200, "text/plain", "Warning: robot commands not valid");
     }
     
   } else if (server.hasArg("ssid") && server.hasArg("passphrase")) {
     
     if (wifi_credentials(server.arg("ssid"), server.arg("passphrase"))) {
-      server.send(200, "text/plain", "Success");
+      http_response(200, "text/plain", "Success");
     } else {
-      server.send(200, "text/plain", "Warning: access point credentials not set");
+      http_response(200, "text/plain", "Warning: access point credentials not set");
     }
     
   } else {
-    server.send(200, "text/plain", "Error: no robot argument");
+    http_response(200, "text/plain", "Error: no robot argument");
   }
 
   hwif_dsleep();
@@ -246,11 +251,11 @@ void http_handle_sleep() {
 
     sleeping_enabled = true;
     timer.attach(time.toInt(), hwif_dsleep_timer);
-    server.send(200, "text/plain", "Sleeping enabled");
+    http_response(200, "text/plain", "Sleeping enabled");
   } else {
     sleeping_enabled = false;
     Serial.println("Sleeping disabled");
-    server.send(200, "text/plain", "Sleeping disabled");
+    http_response(200, "text/plain", "Sleeping disabled");
   }
 }
 
@@ -328,7 +333,7 @@ void handleFileUpload(){
 void handleFileDelete(){
   msg_received = true;
   if(server.args() == 0) {
-    return server.send(500, "text/plain", "BAD ARGS");
+    return http_response(500, "text/plain", "BAD ARGS");
   }
   
   String path = server.arg(0);
@@ -339,11 +344,11 @@ void handleFileDelete(){
   Serial.println("Delete file: " + path);
   
   if(!SPIFFS.exists(path)) {
-    return server.send(404, "text/plain", "FileNotFound");
+    return http_response(404, "text/plain", "FileNotFound");
   }
   
   SPIFFS.remove(path);
-  server.send(200, "text/plain", "");
+  http_response(200, "text/plain", "");
   timer_reset();
 }
 
@@ -375,7 +380,7 @@ void handleFileList() {
   }
   
   output += "]";
-  server.send(200, "text/json", output);
+  http_response(200, "text/json", output.c_str());
   timer_reset();
 }
 
@@ -392,7 +397,7 @@ void http_handle_not_found(){
   for (uint8_t i=0; i<server.args(); i++){
     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
-  server.send(404, "text/plain", message);
+  http_response(404, "text/plain", message.c_str());
   timer_reset();
 }
 
@@ -408,6 +413,7 @@ void http_setup() {
 
   //first callback is called after the request has ended with all parsed arguments
   //second callback handles file uploads at that location
+  //do not send cache headers (do not use http_response)
   server.on("/add", HTTP_POST, [](){ server.send(200, "text/plain", ""); }, handleFileUpload);
 
   //called when the url is not defined here
