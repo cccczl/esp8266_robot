@@ -53,6 +53,10 @@ const int GPIO_IN = 16;
 const int HTTP_PORT = 80;
 const int MAX_COMMANDS = 50;
 
+const int HTTP_OK = 200;
+const int HTTP_NOT_FOUND = 404;
+const int HTTP_SERVER_ERROR = 500;
+
 const char* MY_SSID = "ROBOT";
 const char* MY_KEY = "robot";
 
@@ -208,9 +212,20 @@ void wifi_setup(void) {
   }
 }
 
-void http_response(int code, const char *type, const char *msg) {
-  server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-  server.send(code, type, msg);
+void http_cache(bool cache) {
+  if (cache) {
+    server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  }  
+}
+
+void http_response_json(int code, bool cache, String json) {
+  http_cache(cache);
+  server.send(code, "text/json", json);
+}
+
+void http_response_plain(int code, bool cache, String msg) {
+  http_cache(cache);
+  server.send(code, "text/plain", msg);
 }
 
 void http_handle_robot() {
@@ -220,21 +235,24 @@ void http_handle_robot() {
     String cmd = server.arg("cmd");
 
     if (robot_prg(cmd)) {
-      http_response(200, "text/plain", "Success");
+      http_response_plain(HTTP_OK, false, "Success");
     } else {
-      http_response(200, "text/plain", "Warning: robot commands not valid");
+      http_response_plain(HTTP_OK, false, "Warning: robot commands not valid");
     }
     
   } else if (server.hasArg("ssid") && server.hasArg("passphrase")) {
     
     if (wifi_credentials(server.arg("ssid"), server.arg("passphrase"))) {
-      http_response(200, "text/plain", "Success");
+      String json = "{\"ip\":\"";
+      json += WiFi.localIP();
+      json += "\"}";
+      http_response_json(HTTP_OK, false, json);
     } else {
-      http_response(200, "text/plain", "Warning: access point credentials not set");
+      http_response_plain(HTTP_OK, false, "Warning: access point credentials not set");
     }
     
   } else {
-    http_response(200, "text/plain", "Error: no robot argument");
+    http_response_plain(HTTP_OK, false, "Error: no robot argument");
   }
 
   hwif_dsleep();
@@ -251,11 +269,11 @@ void http_handle_sleep() {
 
     sleeping_enabled = true;
     timer.attach(time.toInt(), hwif_dsleep_timer);
-    http_response(200, "text/plain", "Sleeping enabled");
+    http_response_plain(HTTP_OK, false, "Sleeping enabled");
   } else {
     sleeping_enabled = false;
     Serial.println("Sleeping disabled");
-    http_response(200, "text/plain", "Sleeping disabled");
+    http_response_plain(HTTP_OK, false, "Sleeping disabled");
   }
 }
 
@@ -273,7 +291,7 @@ String getContentType(String filename){
   return "text/plain";
 }
 
-bool handleFileRead(String path){
+bool http_handle_fileread(String path){
   msg_received = true;
   path.trim();
   
@@ -289,6 +307,8 @@ bool handleFileRead(String path){
     size_t sent = server.streamFile(file, contentType);
     file.close();
     timer_reset();
+    
+    http_response_plain(HTTP_OK, true, "File " + path + " read");
     return true;
   }
 
@@ -298,12 +318,13 @@ bool handleFileRead(String path){
   return false;
 }
 
-void handleFileUpload(){
+void http_handle_fileupload(){
   msg_received = true;
   HTTPUpload& upload = server.upload();
+  String filename = "";
 
   if(upload.status == UPLOAD_FILE_START) {
-    String filename = upload.filename;
+    filename = upload.filename;
     
     if(!filename.startsWith("/")) {
       filename = "/" + filename;
@@ -325,15 +346,20 @@ void handleFileUpload(){
     
     Serial.print("Upload size: "); 
     Serial.println(upload.totalSize);
+
+    String json = "{\"name\":\"" + filename + "\",\"size\":";
+    json += upload.totalSize;
+    json += "}";
+    http_response_json(HTTP_OK, false, json);
   }
 
   timer_reset();
 }
 
-void handleFileDelete(){
+void http_handle_filedelete(){
   msg_received = true;
   if(server.args() == 0) {
-    return http_response(500, "text/plain", "BAD ARGS");
+    return http_response_plain(HTTP_SERVER_ERROR, false, "BAD ARGS");
   }
   
   String path = server.arg(0);
@@ -344,15 +370,15 @@ void handleFileDelete(){
   Serial.println("Delete file: " + path);
   
   if(!SPIFFS.exists(path)) {
-    return http_response(404, "text/plain", "FileNotFound");
+    return http_response_plain(HTTP_NOT_FOUND, false, path + "not found");
   }
   
   SPIFFS.remove(path);
-  http_response(200, "text/plain", "");
+  http_response_plain(HTTP_OK, false, path + " deleted");
   timer_reset();
 }
 
-void handleFileList() {
+void http_handle_filelist() {
   msg_received = true;
   String path = "/";
   if(server.hasArg("dir")) {  
@@ -380,7 +406,7 @@ void handleFileList() {
   }
   
   output += "]";
-  http_response(200, "text/json", output.c_str());
+  http_response_json(HTTP_OK, false, output);
   timer_reset();
 }
 
@@ -397,7 +423,7 @@ void http_handle_not_found(){
   for (uint8_t i=0; i<server.args(); i++){
     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
-  http_response(404, "text/plain", message.c_str());
+  http_response_plain(HTTP_NOT_FOUND, false, message);
   timer_reset();
 }
 
@@ -408,18 +434,18 @@ void http_setup() {
 
   server.on("/robot", HTTP_GET, http_handle_robot);
   server.on("/sleep", HTTP_GET, http_handle_sleep);
-  server.on("/list", HTTP_GET, handleFileList);
-  server.on("/remove", HTTP_DELETE, handleFileDelete);
+  server.on("/list", HTTP_GET, http_handle_filelist);
+  server.on("/remove", HTTP_DELETE, http_handle_filedelete);
 
   //first callback is called after the request has ended with all parsed arguments
   //second callback handles file uploads at that location
   //do not send cache headers (do not use http_response)
-  server.on("/add", HTTP_POST, [](){ server.send(200, "text/plain", ""); }, handleFileUpload);
+  server.on("/add", HTTP_POST, [](){ http_response_plain(HTTP_OK, true, ""); }, http_handle_fileupload);
 
   //called when the url is not defined here
   //use it to load content from SPIFFS
   server.onNotFound([]() {
-    if(!handleFileRead(server.uri())) {
+    if(!http_handle_fileread(server.uri())) {
       http_handle_not_found();
     }
   });
