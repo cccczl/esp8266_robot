@@ -321,10 +321,9 @@ bool http_handle_fileread(String path){
 void http_handle_fileupload(){
   msg_received = true;
   HTTPUpload& upload = server.upload();
-  String filename = "";
 
   if(upload.status == UPLOAD_FILE_START) {
-    filename = upload.filename;
+    String filename = upload.filename;
     
     if(!filename.startsWith("/")) {
       filename = "/" + filename;
@@ -347,7 +346,7 @@ void http_handle_fileupload(){
     Serial.print("Upload size: "); 
     Serial.println(upload.totalSize);
 
-    String json = "{\"name\":\"" + filename + "\",\"size\":";
+    String json = "{\"name\":\"" + upload.filename + "\",\"size\":";
     json += upload.totalSize;
     json += "}";
     http_response_json(HTTP_OK, false, json);
