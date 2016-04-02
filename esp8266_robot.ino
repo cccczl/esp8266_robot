@@ -244,7 +244,7 @@ void http_handle_robot() {
     
     if (wifi_credentials(server.arg("ssid"), server.arg("passphrase"))) {
       String json = "{\"ip\":\"";
-      json += String(WiFi.localIP());
+      json += WiFi.localIP().toString();
       json += "\"}";
       http_response_json(HTTP_OK, false, json);
     } else {

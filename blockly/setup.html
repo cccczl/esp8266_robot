@@ -30,7 +30,7 @@
   <div id="error"></div>
 
   <script>
-    function set_error(msg) {
+    function set_msg(msg) {
 	  document.getElementById("error").innerHTML = msg;
 	}
 	
@@ -40,10 +40,11 @@
 	  var passphrase = document.getElementById("passphrase").value;
 	  
 	  if (!ssid) {
-		set_error("Please enter an ssid");
+		set_msg("Please enter an ssid");
 	  } else {
-		set_error("");
-		robot_AP(url, ssid, passphrase);
+		var response = robot_AP(url, ssid, passphrase);
+		var data = JSON.parse(response);
+		set_msg("IP: " + data.ip);
 	  }
     }
 	
