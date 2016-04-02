@@ -92,7 +92,11 @@
       var code = Blockly.JavaScript.workspaceToCode(workspace);
 	  code = "robot_url('" + url + "');\n" + code + "robot_end();\n";
 	  
-      eval(code);
+      var result = eval(code);
+	  
+	  if (result.lastIndexOf("Error:", 0) == 0) {
+		alert(result);
+	  }
     }
 	
 	function again() {

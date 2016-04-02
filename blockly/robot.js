@@ -35,15 +35,22 @@ function robot_right() {
 }
 
 function robot_end() {
-  if (cmd.length >= MAX_COMMANDS) {
-	  console.log("Error: cmd limit exceeded (max: " + MAX_COMMANDS + ")");
+  var msg;
+  if (cmd.length > MAX_COMMANDS) {
+	  msg = "Error: cmd limit exceeded (max: " + MAX_COMMANDS + ")";
+	  console.log(msg);
 	  robot_command(PROGRAM);
   } else if (cmd.length <= 0) {
+	  msg = "Info: no commands";
+	  console.log(msg);
 	  robot_command(PROGRAM);
   } else {
+	  msg = "Info: program sent";
    	  cmd = cmd + PROGRAM + START;
 	  robot_command(cmd);
   }
+  
+  return msg;
 }
 
 function robot_send(request)
