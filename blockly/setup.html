@@ -23,7 +23,8 @@
 	</tr>
 	<tr>
 		<td></td>
-		<td><button id="execute" onClick="execute()">set AP</button></td>
+		<td><button id="execute" onClick="execute()">set AP</button>
+		<button id="sleep" onClick="sleep_toggle()">sleep dsable</button></td>
 	</tr>
   </table>
   <div id="error"></div>
@@ -45,6 +46,24 @@
 		robot_AP(url, ssid, passphrase);
 	  }
     }
+	
+	function sleep_toggle() {
+	  var sleepElem = document.getElementById("sleep");
+	  var url = document.getElementById("robot").value;
+	  var request = "/sleep";
+
+	  if (sleep == true) {
+	    sleepElem.innerHTML = "sleep enable";
+	    sleep = false;
+	  } else {
+	    sleepElem.innerHTML = "sleep dsable";
+		request = request + "?time=60";
+		sleep = true;
+	  }
+	  
+	  robot_url(url);
+	  robot_send(request, console.log);
+	}
   </script>
 </body>
 </html>
