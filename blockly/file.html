@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>My Robot</title>
+  <script src="robot.js"></script>  
+  <link rel="stylesheet" href="robot.css">
+</head>
+<body>
+<h1>My Robot</h1>
+Robot:
+<input type="text" id="robot" value=""/>
+<button onClick="refreshList()">refresh</button> 
+<br/>
+Filelist
+<div id="list"></div>
+<script>
+
+  function convertList(data) {
+    var html = "<ul>";
+  
+	  for (var i in data) {
+		html += "<li>";
+		html += data[i].name;
+		html += "</li>";
+	  }
+	  
+	  html += "</ul>";
+	  return html;
+  }
+  
+  function showList(data) {
+	var list = document.getElementById("list");
+	list.innerHTML = convertList(data);  
+  }
+  
+  function refreshList() {
+  	var url = document.getElementById("robot").value;
+	var request = "/list";
+
+	robot_url(url);
+	var response = robot_send(request);
+	var data = JSON.parse(response);
+	showList(data);
+  }
+  
+  refreshList();
+  
+</script>
+</body>
+</html>
