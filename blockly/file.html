@@ -17,18 +17,18 @@ Filelist
 <script>
 
   function convertList(data) {
-    var html = "<ul>";
+    var html = "<table style='width:0;height:0'>";
   
 	  for (var i in data) {
-		html += "<li>";
+		html += "<tr><td>";
 		html += data[i].name;
-		html += "(size: ";
+		html += "</td><td>";
 		html += data[i].size;
-		html += ")";
-		html += "</li>";
+		html += "</td>";
+		html += "</tr>";
 	  }
 	  
-	  html += "</ul>";
+	  html += "</table>";
 	  return html;
   }
   
