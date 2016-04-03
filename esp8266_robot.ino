@@ -228,6 +228,19 @@ void http_response_plain(int code, bool cache, String msg) {
   server.send(code, "text/plain", msg);
 }
 
+void http_handle_test() {
+  sleeping_enabled = false;
+  
+  if (server.hasArg("gpio") && server.hasArg("value")) {
+    int gpio = server.arg("gpio").toInt();
+    int value = server.arg("value").toInt();
+    digitalWrite(gpio, value);
+    http_response_plain(HTTP_OK, false, "gpio set");
+  }
+
+  http_response_plain(HTTP_SERVER_ERROR, false, "use /test?gpio=xx&value=0|1");
+}
+
 void http_handle_robot() {
   msg_received = true;
   
@@ -431,6 +444,7 @@ void http_setup() {
   Serial.print(") ... ");
 
   server.on("/robot", HTTP_GET, http_handle_robot);
+  server.on("/test", HTTP_GET, http_handle_test);
   server.on("/sleep", HTTP_GET, http_handle_sleep);
   server.on("/list", HTTP_GET, http_handle_filelist);
   server.on("/remove", HTTP_DELETE, http_handle_filedelete);
