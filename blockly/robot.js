@@ -82,3 +82,13 @@ function robot_command(cmd) {
 	console.log(response);
 	return response;
 }
+
+function robot_test(gpio, value) {
+	var uri = "/test?gpio=";
+	uri	+= gpio;
+	uri += "&value=";
+	uri += value;
+	var response = robot_send(uri);
+	console.log(response);
+	return response;	
+}
